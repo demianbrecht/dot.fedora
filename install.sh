@@ -114,19 +114,19 @@ install_vim_plugins() {
     
     # Install recommended plugins
     local plugins=(
-        "https://github.com/tpope/vim-sensible.git:vim-sensible"
-        "https://github.com/tpope/vim-surround.git:vim-surround"
-        "https://github.com/tpope/vim-commentary.git:vim-commentary"
-        "https://github.com/preservim/nerdtree.git:nerdtree"
-        "https://github.com/vim-airline/vim-airline.git:vim-airline"
-        "https://github.com/vim-airline/vim-airline-themes.git:vim-airline-themes"
-        "https://github.com/morhetz/gruvbox.git:gruvbox"
-        "https://github.com/airblade/vim-gitgutter.git:vim-gitgutter"
-        "https://github.com/ctrlpvim/ctrlp.vim.git:ctrlp.vim"
+        "https://github.com/tpope/vim-sensible.git|vim-sensible"
+        "https://github.com/tpope/vim-surround.git|vim-surround"
+        "https://github.com/tpope/vim-commentary.git|vim-commentary"
+        "https://github.com/preservim/nerdtree.git|nerdtree"
+        "https://github.com/vim-airline/vim-airline.git|vim-airline"
+        "https://github.com/vim-airline/vim-airline-themes.git|vim-airline-themes"
+        "https://github.com/morhetz/gruvbox.git|gruvbox"
+        "https://github.com/airblade/vim-gitgutter.git|vim-gitgutter"
+        "https://github.com/ctrlpvim/ctrlp.vim.git|ctrlp.vim"
     )
     
     for plugin_info in "${plugins[@]}"; do
-        IFS=':' read -r url name <<< "$plugin_info"
+        IFS='|' read -r url name <<< "$plugin_info"
         plugin_dir="$HOME/.vim/bundle/$name"
         
         if [[ ! -d "$plugin_dir" ]]; then
@@ -329,6 +329,189 @@ setup_alacritty() {
     fi
 }
 
+# Function to install and configure Hanabi GNOME extension
+install_hanabi_extension() {
+    print_header "Setting up Hanabi GNOME Extension (Live Wallpapers)..."
+    
+    # Check if we're running GNOME
+    if [[ "$XDG_CURRENT_DESKTOP" != *"GNOME"* ]] && [[ "$DESKTOP_SESSION" != *"gnome"* ]]; then
+        print_warning "Hanabi extension is designed for GNOME Shell. Skipping installation."
+        return 0
+    fi
+    
+    # Check GNOME Shell version
+    local gnome_version=""
+    if command -v gnome-shell &>/dev/null; then
+        gnome_version=$(gnome-shell --version | grep -oE '[0-9]+' | head -1)
+        print_status "Detected GNOME Shell version: $gnome_version"
+        
+        if [[ "$gnome_version" -lt 42 ]]; then
+            print_warning "Hanabi requires GNOME Shell 42 or later. Current version: $gnome_version. Skipping installation."
+            return 0
+        fi
+    else
+        print_warning "GNOME Shell not found. Skipping Hanabi installation."
+        return 0
+    fi
+    
+    # Install required packages for Hanabi
+    local hanabi_packages=(
+        "meson"
+        "ninja-build" 
+        "npm"
+        "clapper"
+        "gstreamer1-plugins-base"
+        "gstreamer1-plugins-good"
+        "gstreamer1-plugins-bad-free"
+        "gstreamer1-libav"
+    )
+    
+    print_status "Installing Hanabi dependencies..."
+    for package in "${hanabi_packages[@]}"; do
+        install_package "$package"
+    done
+    
+    # Check if extension is already installed
+    local extensions_dir="$HOME/.local/share/gnome-shell/extensions"
+    local hanabi_ext_dir="$extensions_dir/hanabi-extension@jeffshee.github.io"
+    
+    if [[ -d "$hanabi_ext_dir" ]]; then
+        print_status "Hanabi extension is already installed"
+    else
+        print_status "Installing Hanabi extension..."
+        
+        # Create temporary directory for installation
+        local temp_dir=$(mktemp -d)
+        cd "$temp_dir"
+        
+        # Clone appropriate branch based on GNOME version
+        local clone_command="git clone https://github.com/jeffshee/gnome-ext-hanabi.git"
+        if [[ "$gnome_version" -ge 48 ]]; then
+            clone_command="git clone https://github.com/jeffshee/gnome-ext-hanabi.git -b gnome-48"
+            print_status "Using experimental GNOME 48 branch"
+        elif [[ "$gnome_version" -le 44 ]]; then
+            clone_command="git clone https://github.com/jeffshee/gnome-ext-hanabi.git -b legacy"
+            print_status "Using legacy branch for GNOME 44 and earlier"
+        fi
+        
+        if $clone_command; then
+            cd gnome-ext-hanabi
+            
+            # Run installation script
+            if ./run.sh install; then
+                print_success "Hanabi extension installed successfully"
+            else
+                print_error "Failed to install Hanabi extension"
+                cd - >/dev/null
+                rm -rf "$temp_dir"
+                return 1
+            fi
+        else
+            print_error "Failed to clone Hanabi repository"
+            cd - >/dev/null
+            rm -rf "$temp_dir"
+            return 1
+        fi
+        
+        cd - >/dev/null
+        rm -rf "$temp_dir"
+    fi
+    
+    # Setup live directory and space bedroom wallpaper
+    print_status "Setting up live wallpaper directory..."
+    local live_dir="$HOME/live"
+    mkdir -p "$live_dir"
+    
+    # Check if space bedroom video exists in the repository
+    local repo_space_bedroom="$DOTFILES_DIR/live/space-bedroom.3840x2160.mp4"
+    local target_space_bedroom="$live_dir/space-bedroom.3840x2160.mp4"
+    
+    if [[ -f "$repo_space_bedroom" ]]; then
+        print_success "Found space bedroom wallpaper in repository: $repo_space_bedroom"
+        
+        # Create symlink to the repository file
+        if ln -sf "$repo_space_bedroom" "$target_space_bedroom"; then
+            print_success "Linked space bedroom wallpaper to $target_space_bedroom"
+            space_bedroom_file="$target_space_bedroom"
+        else
+            print_error "Failed to link space bedroom wallpaper"
+            return 1
+        fi
+    else
+        print_warning "Space bedroom wallpaper not found in repository at: $repo_space_bedroom"
+        space_bedroom_file=""
+    fi
+    
+    # Also check for other video files in the repo's live directory
+    print_status "Available wallpapers in repository:"
+    if [[ -d "$DOTFILES_DIR/live" ]]; then
+        for video_file in "$DOTFILES_DIR/live"/*.mp4 "$DOTFILES_DIR/live"/*.webm; do
+            if [[ -f "$video_file" ]]; then
+                local filename=$(basename "$video_file")
+                local target_file="$live_dir/$filename"
+                
+                print_status "  • $filename"
+                
+                # Link all available wallpapers
+                if [[ ! -L "$target_file" ]] && [[ ! -f "$target_file" ]]; then
+                    ln -sf "$video_file" "$target_file" 2>/dev/null || true
+                fi
+            fi
+        done
+    fi
+    
+    if [[ -n "$space_bedroom_file" ]]; then
+        print_success "Space bedroom wallpaper ready: $space_bedroom_file"
+        
+        # Create a helper script for configuring Hanabi
+        mkdir -p "$HOME/.local/bin"
+        cat > "$HOME/.local/bin/configure-hanabi" << EOF
+#!/bin/bash
+# Helper script to configure Hanabi with space bedroom wallpaper
+
+SPACE_BEDROOM_FILE="$space_bedroom_file"
+
+if command -v gsettings &>/dev/null; then
+    # Set the wallpaper file (this may vary depending on Hanabi's schema)
+    # Note: This is a placeholder - actual gsettings key may differ
+    echo "Configuring Hanabi to use: \$SPACE_BEDROOM_FILE"
+    echo "Please manually configure in Hanabi extension preferences:"
+    echo "1. Open GNOME Extensions app"
+    echo "2. Find Hanabi extension and click settings/preferences"
+    echo "3. Set video file to: \$SPACE_BEDROOM_FILE"
+else
+    echo "gsettings not available. Please configure Hanabi manually."
+fi
+EOF
+        chmod +x "$HOME/.local/bin/configure-hanabi"
+    else
+        print_warning "Space bedroom wallpaper not available"
+        print_status "Available wallpapers will be linked to $live_dir"
+    fi
+    
+    # Enable extension if possible
+    if command -v gnome-extensions &>/dev/null; then
+        print_status "Attempting to enable Hanabi extension..."
+        if gnome-extensions enable hanabi-extension@jeffshee.github.io 2>/dev/null; then
+            print_success "Hanabi extension enabled"
+        else
+            print_warning "Could not auto-enable Hanabi extension"
+            print_status "Please enable it manually using GNOME Extensions app"
+        fi
+    fi
+    
+    echo ""
+    print_status "Hanabi extension setup complete!"
+    print_status "To configure:"
+    print_status "1. Restart GNOME Shell (logout/login or Alt+F2 → 'r' on X11)"
+    print_status "2. Enable Hanabi extension in GNOME Extensions app"
+    print_status "3. Open Hanabi preferences and select your video file"
+    if [[ -n "$space_bedroom_file" ]]; then
+        print_status "4. Use: $space_bedroom_file"
+    fi
+    echo ""
+}
+
 # Main installation function
 main() {
     print_header "=== Fedora Workstation Dotfiles Installation ==="
@@ -430,6 +613,10 @@ EOF
     install_vim_plugins
     echo ""
     
+    # Install Hanabi GNOME extension
+    install_hanabi_extension
+    echo ""
+    
     print_header "=== Installation Complete! ==="
     echo ""
     print_success "All dotfiles have been installed successfully!"
@@ -442,6 +629,7 @@ EOF
     echo "  • Bash configuration with vim mode and aliases"
     echo "  • Multiple programming fonts with improved rendering"
     echo "  • Font rendering optimizations"
+    echo "  • Hanabi GNOME extension for live wallpapers"
     echo ""
     
     if [[ -d "$BACKUP_DIR" ]]; then
