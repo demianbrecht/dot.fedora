@@ -1,0 +1,208 @@
+# Bash Configuration - Vim Mode and Productivity Enhancements
+# For Fedora Workstation dotfiles
+
+# Enable vi mode in bash
+set -o vi
+
+# Show vi mode in prompt (optional - uncomment if desired)
+# set show-mode-in-prompt on
+
+# Make vi mode transitions faster
+export KEYTIMEOUT=1
+
+# History settings
+export HISTSIZE=10000
+export HISTFILESIZE=20000
+export HISTCONTROL=ignoreboth:erasedups
+export HISTIGNORE="ls:ll:cd:pwd:bg:fg:history:clear"
+
+# Append to history file instead of overwriting
+shopt -s histappend
+
+# Save multi-line commands as one command
+shopt -s cmdhist
+
+# Check window size after each command and update LINES and COLUMNS
+shopt -s checkwinsize
+
+# Enable globstar for recursive globbing (e.g., **/*.txt)
+shopt -s globstar
+
+# Case-insensitive globbing
+shopt -s nocaseglob
+
+# Autocorrect typos in path names when using cd
+shopt -s cdspell
+
+# Autocorrect minor errors in directory names
+shopt -s dirspell
+
+# Enable programmable completion features
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+  fi
+fi
+
+# Better ls colors
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+fi
+
+# Colored grep output
+export GREP_OPTIONS='--color=auto'
+export GREP_COLOR='1;33'
+
+# Less pager settings
+export LESS='-R -i -w -M -z-4'
+export LESSOPEN='|~/.lessfilter %s 2>&-' # Use lesspipe if available
+
+# Editor settings
+export EDITOR=vim
+export VISUAL=vim
+
+# Aliases for productivity
+alias ls='ls --color=auto'
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+
+# Directory navigation
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias ~='cd ~'
+alias -- -='cd -'
+
+# Git aliases (complement the .gitconfig)
+alias g='git'
+alias gs='git status'
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gl='git pull'
+alias gd='git diff'
+alias gco='git checkout'
+alias gbr='git branch'
+alias glog='git log --oneline --graph --decorate'
+
+# System aliases
+alias h='history'
+alias j='jobs -l'
+alias path='echo -e ${PATH//:/\\n}'
+alias now='date +"%T"'
+alias nowtime=now
+alias nowdate='date +"%d-%m-%Y"'
+
+# Safety aliases
+alias cp='cp -i'
+alias mv='mv -i'
+alias rm='rm -i'
+alias ln='ln -i'
+
+# Utility aliases
+alias mkdir='mkdir -pv'
+alias mount='mount | column -t'
+alias df='df -H'
+alias du='du -ch'
+alias free='free -mt'
+alias ps='ps auxf'
+alias ping='ping -c 5'
+alias wget='wget -c'
+
+# Directory listing with human readable sizes
+alias ll='ls -alFh'
+alias lt='ls -alFht'  # Sort by time
+alias lz='ls -alFhS'  # Sort by size
+
+# Find and process management
+alias psg='ps aux | grep'
+alias top='htop'
+alias myip='curl -s http://icanhazip.com'
+alias ports='netstat -tulanp'
+
+# Archive extraction
+extract() {
+    if [ -f "$1" ] ; then
+        case $1 in
+            *.tar.bz2)   tar xjf "$1"   ;;
+            *.tar.gz)    tar xzf "$1"   ;;
+            *.bz2)       bunzip2 "$1"  ;;
+            *.rar)       unrar x "$1"  ;;
+            *.gz)        gunzip "$1"   ;;
+            *.tar)       tar xf "$1"   ;;
+            *.tbz2)      tar xjf "$1"  ;;
+            *.tgz)       tar xzf "$1"  ;;
+            *.zip)       unzip "$1"    ;;
+            *.Z)         uncompress "$1" ;;
+            *.7z)        7z x "$1"     ;;
+            *)           echo "'$1' cannot be extracted via extract()" ;;
+        esac
+    else
+        echo "'$1' is not a valid file"
+    fi
+}
+
+# Create directory and cd into it
+mkcd() {
+    mkdir -p "$1" && cd "$1"
+}
+
+# Quick search in history
+hg() {
+    history | grep "$1"
+}
+
+# Find files and directories quickly
+ff() {
+    find . -type f -name "*$1*"
+}
+
+fd() {
+    find . -type d -name "*$1*"
+}
+
+# Show file/directory sizes in current directory
+dusage() {
+    du -ch "$@" | sort -rh
+}
+
+# Weather function (requires curl)
+weather() {
+    local city="${1:-$(curl -s ipinfo.io/city 2>/dev/null)}"
+    curl -s "wttr.in/$city"
+}
+
+# Quick web server in current directory
+serve() {
+    local port="${1:-8000}"
+    echo "Serving at http://localhost:$port"
+    python3 -m http.server "$port"
+}
+
+# Vim mode key bindings for better experience
+# In command mode (vi mode), these provide better navigation
+bind -m vi-command 'Control-l: clear-screen'
+bind -m vi-insert 'Control-l: clear-screen'
+bind -m vi-command 'Control-a: beginning-of-line'
+bind -m vi-command 'Control-e: end-of-line'
+
+# Custom prompt that shows vi mode (optional)
+# Uncomment the following to show vi mode in your prompt
+# PS1_ORIGINAL="$PS1"
+# __prompt_command() {
+#     local curr_mode="$(set +o | grep 'vi.*on')"
+#     if [[ -n "$curr_mode" ]]; then
+#         PS1="[vi] $PS1_ORIGINAL"
+#     else
+#         PS1="$PS1_ORIGINAL"
+#     fi
+# }
+# PROMPT_COMMAND=__prompt_command
+
+# Load local bash customizations if they exist 

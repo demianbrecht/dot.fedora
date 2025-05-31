@@ -390,6 +390,42 @@ main() {
     print_status "Verify your GPG key is available: gpg --list-secret-keys"
     echo ""
     
+    # Setup Bash configuration
+    print_header "Setting up Bash configuration..."
+    
+    # Create bashrc.d directory
+    mkdir -p "$HOME/.bashrc.d"
+    
+    create_symlink "$DOTFILES_DIR/bashrc_vim" "$HOME/.bashrc.d/vim_mode" "Bash vim mode config"
+    
+    # Check if bashrc sources from bashrc.d
+    if ! grep -q 'bashrc\.d' "$HOME/.bashrc" 2>/dev/null; then
+        print_status "Adding ~/.bashrc.d/ sourcing to ~/.bashrc..."
+        
+        # Backup original bashrc
+        if [[ -f "$HOME/.bashrc" ]]; then
+            backup_file "$HOME/.bashrc"
+        fi
+        
+        # Add sourcing of bashrc.d files
+        cat >> "$HOME/.bashrc" << 'EOF'
+
+# Source additional bash configurations from ~/.bashrc.d/
+if [ -d ~/.bashrc.d ]; then
+    for file in ~/.bashrc.d/*; do
+        [[ -r "$file" ]] && source "$file"
+    done
+fi
+EOF
+        print_success "Added ~/.bashrc.d/ sourcing to ~/.bashrc"
+    else
+        print_status "~/.bashrc already sources from ~/.bashrc.d/"
+    fi
+    
+    print_status "Bash vim mode and productivity enhancements installed"
+    print_status "Start a new shell session or run 'source ~/.bashrc' to apply changes"
+    echo ""
+    
     # Install Vim plugins
     install_vim_plugins
     echo ""
@@ -403,6 +439,7 @@ main() {
     echo "  • Vim configuration with pathogen and dark theme"
     echo "  • Vim plugins for enhanced productivity"
     echo "  • Git configuration with GPG commit signing"
+    echo "  • Bash configuration with vim mode and aliases"
     echo "  • Multiple programming fonts with improved rendering"
     echo "  • Font rendering optimizations"
     echo ""

@@ -28,6 +28,13 @@ A curated collection of configuration files (dotfiles) for a modern, productive 
 - **Colored output** for better readability
 - **Smart defaults** for pulling, pushing, and branching
 
+### 🐚 Bash Configuration
+- **Vim mode** enabled for command line editing
+- **Enhanced history** with intelligent deduplication
+- **Productivity aliases** and functions
+- **Smart completions** and navigation
+- **Modular configuration** via `~/.bashrc.d/`
+
 ### 🔧 Automated Installation
 - **Intelligent backup system** - saves your existing configs
 - **Package installation** - installs required dependencies
@@ -94,6 +101,7 @@ A curated collection of configuration files (dotfiles) for a modern, productive 
 ├── alacritty.toml    # Alacritty configuration
 ├── .vimrc            # Vim configuration
 ├── .gitconfig        # Git configuration with GPG signing
+├── bashrc_vim        # Bash configuration with vim mode
 ├── install.sh        # Installation script
 ├── fix-fonts.sh      # Font troubleshooting script
 └── README.md         # This file
@@ -208,6 +216,52 @@ The configuration includes many helpful aliases:
 - `git undo` - Undo last commit (keep changes)
 - `git cleanup` - Remove merged branches
 - `git verify` - Show commit signature verification
+
+## Bash Configuration
+
+The included `bashrc_vim` provides a comprehensive bash setup with vim mode and productivity enhancements.
+
+### Key Features
+- **Vim mode enabled** - Use vi/vim key bindings on the command line
+- **Enhanced history** - 10,000 commands, intelligent deduplication
+- **Smart shell options** - Auto-correction, case-insensitive completion
+- **Productivity aliases** - Shortcuts for common operations
+- **Useful functions** - Archive extraction, directory navigation, etc.
+- **Modular installation** - Installed in `~/.bashrc.d/` for clean organization
+
+### Vim Mode Usage
+Once installed, you can use vim key bindings in bash:
+- `Esc` - Enter command mode
+- `h/j/k/l` - Navigate in command mode
+- `A` - Append to end of line
+- `I` - Insert at beginning of line
+- `dd` - Delete entire line
+- `yy` - Copy entire line
+- `/` - Search command history
+- `n/N` - Navigate search results
+
+### Useful Aliases Added
+- **Navigation**: `..`, `...`, `....` for going up directories
+- **Git shortcuts**: `g`, `gs`, `ga`, `gc`, `gp`, `gl`, `gd`
+- **System info**: `myip`, `ports`, `free`, `df`, `du`
+- **File operations**: `ll`, `la`, `lt` (sort by time), `lz` (sort by size)
+- **Safety**: `cp -i`, `mv -i`, `rm -i` (interactive mode)
+
+### Useful Functions Added
+- `extract file.zip` - Extract any archive format
+- `mkcd dirname` - Create directory and cd into it
+- `hg searchterm` - Search command history
+- `ff filename` - Find files by name
+- `fd dirname` - Find directories by name
+- `weather [city]` - Show weather forecast
+- `serve [port]` - Start HTTP server in current directory
+
+### Installation Details
+The bash configuration:
+1. Creates `~/.bashrc.d/` directory
+2. Symlinks `bashrc_vim` to `~/.bashrc.d/vim_mode`
+3. Adds sourcing logic to `~/.bashrc` if needed
+4. Preserves existing bashrc with backup
 
 ## Customization
 
