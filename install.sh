@@ -315,16 +315,16 @@ setup_alacritty() {
     
     create_symlink "$DOTFILES_DIR/alacritty.toml" "$alacritty_config_dir/alacritty.toml" "Alacritty config"
     
-    # Test if JetBrains Mono renders well
+    # Provide font suggestions if JetBrains Mono isn't available
     if command -v alacritty &>/dev/null; then
-        print_status "Testing font rendering..."
-        
-        # Check if JetBrains Mono is available
         if ! fc-list | grep -qi "jetbrains mono"; then
-            print_warning "JetBrains Mono not found, updating config to use Fira Code..."
-            
-            # Create a version with Fira Code as default
-            sed 's/JetBrains Mono/Fira Code/g' "$DOTFILES_DIR/alacritty.toml" > "$alacritty_config_dir/alacritty.toml"
+            print_warning "JetBrains Mono not found!"
+            print_status "You can manually edit ~/.config/alacritty/alacritty.toml to use a different font:"
+            print_status "  - Change 'JetBrains Mono' to 'Fira Code'"
+            print_status "  - Or uncomment the alternative font sections in the config"
+            print_status "  - Or run './fix-fonts.sh' for interactive font switching"
+        else
+            print_success "JetBrains Mono font is available"
         fi
     fi
 }

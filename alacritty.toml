@@ -1,6 +1,7 @@
 # Alacritty Configuration
 # For Fedora Workstation - Modern Dark Theme
 
+[general]
 # Import additional config files
 import = []
 
@@ -44,19 +45,19 @@ multiplier = 3
 
 [font]
 # Normal font with fallbacks for better compatibility
-normal = { family = "JetBrains Mono", style = "Regular" }
+normal = { family = "Fira Code", style = "Regular" }
 
 # Bold font
-bold = { family = "JetBrains Mono", style = "Bold" }
+bold = { family = "Fira Code", style = "Bold" }
 
 # Italic font
-italic = { family = "JetBrains Mono", style = "Italic" }
+italic = { family = "Fira Code", style = "Italic" }
 
 # Bold italic font
-bold_italic = { family = "JetBrains Mono", style = "Bold Italic" }
+bold_italic = { family = "Fira Code", style = "Bold Italic" }
 
 # Font size - slightly larger for better readability
-size = 13.0
+size = 9.0
 
 # Offset for better spacing
 offset = { x = 0, y = 2 }
@@ -64,18 +65,16 @@ offset = { x = 0, y = 2 }
 # Glyph offset for fine-tuning
 glyph_offset = { x = 0, y = 0 }
 
-# Built-in font fallbacks (used if JetBrains Mono isn't available or renders poorly)
+# Built-in font fallbacks (used if Fira Code isn't available or renders poorly)
 builtin_box_drawing = true
 
-# Font hinting and anti-aliasing
-
-# Alternative font configurations (uncomment if JetBrains Mono looks bad)
+# Alternative font configurations (uncomment if Fira Code looks bad)
 # [font]
-# normal = { family = "Fira Code", style = "Regular" }
-# bold = { family = "Fira Code", style = "Bold" }
-# italic = { family = "Fira Code", style = "Italic" }
-# bold_italic = { family = "Fira Code", style = "Bold Italic" }
-# size = 13.0
+# normal = { family = "JetBrains Mono", style = "Regular" }
+# bold = { family = "JetBrains Mono", style = "Bold" }
+# italic = { family = "JetBrains Mono", style = "Italic" }
+# bold_italic = { family = "JetBrains Mono", style = "Bold Italic" }
+# size = 11.0
 
 # Or use system monospace font
 # [font]
@@ -83,7 +82,7 @@ builtin_box_drawing = true
 # bold = { family = "monospace", style = "Bold" }
 # italic = { family = "monospace", style = "Italic" }
 # bold_italic = { family = "monospace", style = "Bold Italic" }
-# size = 13.0
+# size = 11.0
 
 [colors]
 # Default colors
@@ -314,4 +313,4 @@ persistent_logging = false
 log_level = "Warn"
 
 # Print all received window events
-print_events = false 
+print_events = false
