@@ -315,6 +315,8 @@ setup_alacritty() {
     
     create_symlink "$DOTFILES_DIR/alacritty.toml" "$alacritty_config_dir/alacritty.toml" "Alacritty config"
     
+    print_success "Alacritty configured to use zsh as default shell"
+    
     # Provide font suggestions if JetBrains Mono isn't available
     if command -v alacritty &>/dev/null; then
         if ! fc-list | grep -qi "jetbrains mono"; then
@@ -512,6 +514,183 @@ EOF
     echo ""
 }
 
+# Function to setup zsh with Oh My Zsh and Powerlevel10k
+setup_zsh() {
+    print_header "Setting up Zsh with Oh My Zsh and Powerlevel10k..."
+    
+    # Install zsh if not already installed
+    install_package "zsh"
+    
+    # Install Oh My Zsh if not already installed
+    local oh_my_zsh_dir="$HOME/.oh-my-zsh"
+    if [[ ! -d "$oh_my_zsh_dir" ]]; then
+        print_status "Installing Oh My Zsh..."
+        
+        # Download and install Oh My Zsh non-interactively
+        export RUNZSH=no
+        export CHSH=no
+        if sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended; then
+            print_success "Oh My Zsh installed successfully"
+        else
+            print_error "Failed to install Oh My Zsh"
+            return 1
+        fi
+    else
+        print_status "Oh My Zsh is already installed"
+    fi
+    
+    # Install Powerlevel10k theme
+    local p10k_dir="${oh_my_zsh_dir}/custom/themes/powerlevel10k"
+    if [[ ! -d "$p10k_dir" ]]; then
+        print_status "Installing Powerlevel10k theme..."
+        if git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$p10k_dir"; then
+            print_success "Powerlevel10k theme installed"
+        else
+            print_error "Failed to install Powerlevel10k theme"
+            return 1
+        fi
+    else
+        print_status "Powerlevel10k theme is already installed"
+    fi
+    
+    # Install zsh plugins
+    print_status "Installing Zsh plugins..."
+    
+    local plugins_dir="${oh_my_zsh_dir}/custom/plugins"
+    
+    # Install zsh-autosuggestions
+    local autosuggestions_dir="${plugins_dir}/zsh-autosuggestions"
+    if [[ ! -d "$autosuggestions_dir" ]]; then
+        print_status "Installing zsh-autosuggestions plugin..."
+        if git clone https://github.com/zsh-users/zsh-autosuggestions "$autosuggestions_dir"; then
+            print_success "zsh-autosuggestions installed"
+        else
+            print_warning "Failed to install zsh-autosuggestions"
+        fi
+    else
+        print_status "zsh-autosuggestions is already installed"
+    fi
+    
+    # Install zsh-syntax-highlighting
+    local syntax_highlighting_dir="${plugins_dir}/zsh-syntax-highlighting"
+    if [[ ! -d "$syntax_highlighting_dir" ]]; then
+        print_status "Installing zsh-syntax-highlighting plugin..."
+        if git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$syntax_highlighting_dir"; then
+            print_success "zsh-syntax-highlighting installed"
+        else
+            print_warning "Failed to install zsh-syntax-highlighting"
+        fi
+    else
+        print_status "zsh-syntax-highlighting is already installed"
+    fi
+    
+    # Install history-substring-search
+    local history_search_dir="${plugins_dir}/zsh-history-substring-search"
+    if [[ ! -d "$history_search_dir" ]]; then
+        print_status "Installing zsh-history-substring-search plugin..."
+        if git clone https://github.com/zsh-users/zsh-history-substring-search "$history_search_dir"; then
+            print_success "zsh-history-substring-search installed"
+        else
+            print_warning "Failed to install zsh-history-substring-search"
+        fi
+    else
+        print_status "zsh-history-substring-search is already installed"
+    fi
+    
+    # Install additional useful tools
+    print_status "Installing additional developer tools..."
+    
+    # Install exa (modern ls replacement)
+    if ! command -v exa &>/dev/null; then
+        install_package "exa" || print_warning "Failed to install exa (modern ls replacement)"
+    fi
+    
+    # Install fd (modern find replacement)
+    if ! command -v fd &>/dev/null; then
+        install_package "fd-find" || print_warning "Failed to install fd-find"
+    fi
+    
+    # Install ripgrep (modern grep replacement)
+    if ! command -v rg &>/dev/null; then
+        install_package "ripgrep" || print_warning "Failed to install ripgrep"
+    fi
+    
+    # Install bat (modern cat replacement)
+    if ! command -v bat &>/dev/null; then
+        install_package "bat" || print_warning "Failed to install bat"
+    fi
+    
+    # Install fzf (fuzzy finder)
+    if ! command -v fzf &>/dev/null; then
+        install_package "fzf" || print_warning "Failed to install fzf"
+        
+        # Install fzf key bindings and completions
+        if command -v fzf &>/dev/null; then
+            local fzf_completion="$HOME/.fzf.zsh"
+            if [[ ! -f "$fzf_completion" ]]; then
+                print_status "Setting up fzf key bindings..."
+                /usr/share/fzf/shell/key-bindings.zsh > "$fzf_completion" 2>/dev/null || true
+                echo "" >> "$fzf_completion"
+                /usr/share/fzf/shell/completion.zsh >> "$fzf_completion" 2>/dev/null || true
+            fi
+        fi
+    fi
+    
+    # Create symlinks for zsh configuration
+    create_symlink "$DOTFILES_DIR/.zshrc" "$HOME/.zshrc" "Zsh configuration"
+    create_symlink "$DOTFILES_DIR/.p10k.zsh" "$HOME/.p10k.zsh" "Powerlevel10k configuration"
+    
+    print_success "Zsh configuration completed!"
+    echo ""
+}
+
+# Function to change default shell to zsh
+change_default_shell() {
+    print_header "Setting Zsh as default shell..."
+    
+    local current_shell=$(echo $SHELL)
+    local zsh_path=$(which zsh)
+    
+    if [[ -z "$zsh_path" ]]; then
+        print_error "Zsh not found! Please install zsh first."
+        return 1
+    fi
+    
+    print_status "Current shell: $current_shell"
+    print_status "Zsh path: $zsh_path"
+    
+    # Check if zsh is in /etc/shells
+    if ! grep -Fxq "$zsh_path" /etc/shells; then
+        print_status "Adding zsh to /etc/shells..."
+        if echo "$zsh_path" | sudo tee -a /etc/shells; then
+            print_success "Added zsh to /etc/shells"
+        else
+            print_error "Failed to add zsh to /etc/shells"
+            return 1
+        fi
+    else
+        print_status "Zsh is already in /etc/shells"
+    fi
+    
+    # Change default shell
+    if [[ "$current_shell" != "$zsh_path" ]]; then
+        print_status "Changing default shell to zsh..."
+        if chsh -s "$zsh_path"; then
+            print_success "Default shell changed to zsh"
+            print_warning "You need to log out and log back in for the change to take effect"
+            print_status "Or you can start a new zsh session now by typing: zsh"
+        else
+            print_error "Failed to change default shell to zsh"
+            print_status "You can manually change it later with: chsh -s $zsh_path"
+            return 1
+        fi
+    else
+        print_status "Zsh is already the default shell"
+    fi
+    
+    echo ""
+}
+
 # Main installation function
 main() {
     print_header "=== Fedora Workstation Dotfiles Installation ==="
@@ -538,6 +717,7 @@ main() {
     install_package "curl"
     install_package "unzip"
     install_package "fontconfig"
+    install_package "zsh"
     echo ""
     
     # Setup font rendering
@@ -617,12 +797,20 @@ EOF
     install_hanabi_extension
     echo ""
     
+    # Setup zsh with Oh My Zsh and Powerlevel10k
+    setup_zsh
+    echo ""
+    
+    # Change default shell to zsh
+    change_default_shell
+    echo ""
+    
     print_header "=== Installation Complete! ==="
     echo ""
     print_success "All dotfiles have been installed successfully!"
     echo ""
     print_status "What's been installed:"
-    echo "  • Alacritty configuration with 80% transparency and vim mode"
+    echo "  • Alacritty configuration with 80% transparency and vim mode (zsh default)"
     echo "  • Vim configuration with pathogen and dark theme"
     echo "  • Vim plugins for enhanced productivity"
     echo "  • Git configuration with GPG commit signing"
@@ -630,6 +818,9 @@ EOF
     echo "  • Multiple programming fonts with improved rendering"
     echo "  • Font rendering optimizations"
     echo "  • Hanabi GNOME extension for live wallpapers"
+    echo "  • Zsh with Oh My Zsh and Powerlevel10k"
+    echo "  • Zsh plugins: autosuggestions, syntax highlighting, history search"
+    echo "  • Modern CLI tools: exa, fd, ripgrep, bat, fzf"
     echo ""
     
     if [[ -d "$BACKUP_DIR" ]]; then
@@ -637,22 +828,56 @@ EOF
     fi
     
     echo ""
+    print_header "Zsh Features & Key Bindings:"
+    echo "• Vi mode enabled (bindkey -v)"
+    echo "• Git integration with visual status indicators"
+    echo "• Fish-like autosuggestions (grey text)"
+    echo "• Syntax highlighting for commands"
+    echo "• History substring search (↑/↓ arrows)"
+    echo "• Fuzzy finding with fzf (Ctrl+R for history, Ctrl+T for files)"
+    echo "• Smart directory navigation (auto-cd, pushd)"
+    echo ""
+    echo "Useful aliases and functions:"
+    echo "• ll, la, lt - Enhanced directory listing"
+    echo "• g, ga, gc, gp - Git shortcuts"
+    echo "• mkcd <dir> - Create and enter directory"
+    echo "• extract <file> - Universal archive extraction"
+    echo "• weather [city] - Get weather info"
+    echo "• genpass [length] - Generate random password"
+    echo "• server [port] - Start HTTP server in current directory"
+    echo ""
+    
+    print_header "To start using your new environment:"
+    print_status "1. Start a new zsh session: zsh"
+    print_status "2. Or logout and login again to use zsh as default shell"
+    print_status "3. Restart Alacritty to see the new configuration"
+    print_status "4. Open Vim to see the new configuration and plugins"
+    echo ""
+    
     print_header "Font Troubleshooting:"
-    echo "If JetBrains Mono still looks bad, try these alternatives:"
-    echo "1. Edit ~/.config/alacritty/alacritty.toml and uncomment the Fira Code section"
-    echo "2. Or use the system monospace font section"
-    echo "3. Run 'fc-list : family | grep -i mono' to see available fonts"
+    echo "If fonts don't look right in Alacritty:"
+    echo "1. Edit ~/.config/alacritty/alacritty.toml"
+    echo "2. Change 'Fira Code' to 'JetBrains Mono' or vice versa"
+    echo "3. Or run './fix-fonts.sh' for interactive font switching"
+    echo "4. Run 'fc-list : family | grep -i mono' to see available fonts"
     echo ""
-    print_status "To apply changes:"
-    echo "  • Restart Alacritty or open a new terminal window"
-    echo "  • Open Vim to see the new configuration"
+    
+    print_header "Useful Key Bindings:"
+    echo "Vim mode in Zsh:"
+    echo "• Normal mode: Ctrl+[, Escape, or jk/kj"
+    echo "• Command editing: Ctrl+X Ctrl+E (opens in Vim)"
     echo ""
-    print_status "Useful Vim commands with this configuration:"
-    echo "  • Space + w : Save file"
-    echo "  • Space + q : Quit"
-    echo "  • Space + h : Clear search highlights"
-    echo "  • Ctrl + Shift + Space : Toggle Vi mode in Alacritty"
-    echo "  • jk or kj : Alternative to Escape in Vim insert mode"
+    echo "Alacritty vim mode:"
+    echo "• Toggle: Ctrl+Shift+Space"
+    echo "• Navigate with hjkl, copy with y, paste with p"
+    echo ""
+    echo "Vim shortcuts (Space is leader):"
+    echo "• Space+w: Save file"
+    echo "• Space+q: Quit"
+    echo "• Space+h: Clear search highlights"
+    echo "• jk or kj: Alternative to Escape in insert mode"
+    echo ""
+    
     echo ""
 }
 

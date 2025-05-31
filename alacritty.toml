@@ -8,6 +8,11 @@ import = []
 [env]
 TERM = "xterm-256color"
 
+[shell]
+# Shell program and its arguments
+program = "/usr/bin/zsh"
+args = ["--login"]
+
 [window]
 # Window dimensions
 dimensions = { columns = 120, lines = 40 }
@@ -49,16 +54,16 @@ multiplier = 3
 
 [font]
 # Normal font with fallbacks for better compatibility
-normal = { family = "Fira Code", style = "Regular" }
+normal = { family = "FiraCode Nerd Font", style = "Regular" }
 
 # Bold font
-bold = { family = "Fira Code", style = "Bold" }
+bold = { family = "FiraCode Nerd Font", style = "Bold" }
 
 # Italic font
-italic = { family = "Fira Code", style = "Italic" }
+italic = { family = "FiraCode Nerd Font", style = "Italic" }
 
 # Bold italic font
-bold_italic = { family = "Fira Code", style = "Bold Italic" }
+bold_italic = { family = "FiraCode Nerd Font", style = "Bold Italic" }
 
 # Font size - slightly larger for better readability
 size = 9.0
