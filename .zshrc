@@ -87,7 +87,7 @@ setopt PUSHD_SILENT              # Do not print the directory stack after pushd 
 setopt COMPLETE_ALIASES          # Complete aliases
 setopt GLOB_COMPLETE             # Generate matches for a glob
 setopt HASH_LIST_ALL             # Hash everything before completion
-setopt MENU_COMPLETE             # Autoselect the first completion entry
+# setopt MENU_COMPLETE             # Autoselect the first completion entry - DISABLED for autosuggestions
 
 # Other useful options
 setopt CORRECT                   # Spelling correction
@@ -276,18 +276,28 @@ genpass() {
 # ============================================================================
 
 # Vi mode for command line editing (matches vim theme)
-bindkey -v
+bindkey -v  # Re-enabled with proper tab completion below
+
+# Autosuggestions keybindings (fish-like behavior)
+bindkey '^I' autosuggest-accept        # Tab accepts the autosuggestion
+bindkey '^[[C' autosuggest-accept      # Right arrow accepts the autosuggestion  
+bindkey '^F' autosuggest-accept        # Ctrl+F accepts the autosuggestion
+bindkey '^[[1;5C' autosuggest-partial-accept  # Ctrl+Right arrow accepts partial word
+
+# Fix tab completion in vi mode (fallback when no autosuggestion)
+bindkey -M viins '^[[Z' expand-or-complete  # Shift+Tab for traditional completion
+bindkey -M vicmd '^[[Z' expand-or-complete  # Shift+Tab in command mode
 
 # Better history search
 bindkey "^[[A" history-substring-search-up
 bindkey "^[[B" history-substring-search-down
-bindkey -M vicmd "k" history-substring-search-up
+bindkey -M vicmd "k" history-substring-search-up  # Re-enabled
 bindkey -M vicmd "j" history-substring-search-down
 
 # Edit command line in vim
 autoload -U edit-command-line
 zle -N edit-command-line
-bindkey -M vicmd "^E" edit-command-line
+bindkey -M vicmd "^E" edit-command-line  # Re-enabled
 
 # Quick navigation
 bindkey "^A" beginning-of-line
@@ -296,6 +306,14 @@ bindkey "^K" kill-line
 bindkey "^U" kill-whole-line
 bindkey "^W" backward-kill-word
 bindkey "^H" backward-delete-char
+
+# Restore important emacs-style keybindings (even in vi mode)
+bindkey "^R" history-incremental-search-backward  # Ctrl+R for reverse search
+bindkey "^S" history-incremental-search-forward   # Ctrl+S for forward search
+bindkey "^P" history-search-backward              # Ctrl+P for previous command
+bindkey "^N" history-search-forward               # Ctrl+N for next command
+bindkey "^Y" yank                                 # Ctrl+Y to paste
+bindkey "^L" clear-screen                         # Ctrl+L to clear screen
 
 # ============================================================================
 # COMPLETION SYSTEM
@@ -306,7 +324,7 @@ autoload -Uz compinit
 compinit
 
 # Completion styling
-zstyle ':completion:*' menu select
+zstyle ':completion:*' menu select=2  # Only show menu with 2+ options
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 zstyle ':completion:*:descriptions' format '[%d]'

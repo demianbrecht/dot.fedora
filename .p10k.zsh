@@ -16,6 +16,7 @@
 
   # Simple left prompt: directory + git + prompt character
   typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(
+    virtualenv              # Python virtual environment
     dir                     # Current directory
     vcs                     # Git status  
     prompt_char             # Prompt character
@@ -88,6 +89,13 @@
   # Time format
   typeset -g POWERLEVEL9K_TIME_FOREGROUND=white
   typeset -g POWERLEVEL9K_TIME_FORMAT='%D{%H:%M}'
+
+  # Virtual environment styling - clean and minimal
+  typeset -g POWERLEVEL9K_VIRTUALENV_FOREGROUND=cyan
+  typeset -g POWERLEVEL9K_VIRTUALENV_SHOW_PYTHON_VERSION=false
+  typeset -g POWERLEVEL9K_VIRTUALENV_SHOW_WITH_PYENV=false
+  typeset -g POWERLEVEL9K_VIRTUALENV_LEFT_DELIMITER=''
+  typeset -g POWERLEVEL9K_VIRTUALENV_RIGHT_DELIMITER=''
 
   # Transient prompt - clean up old prompts
   typeset -g POWERLEVEL9K_TRANSIENT_PROMPT=always
