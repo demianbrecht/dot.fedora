@@ -1,0 +1,159 @@
+# Git Configuration for Fedora Workstation
+# Includes GPG signing setup and other useful configurations
+
+[user]
+	# Replace with your actual name and email
+	name = Demian Brecht
+	email = demianbrecht@gmail.com
+	# GPG key for signing commits
+	signingkey = 14E4E96742F22903
+
+[commit]
+	# Automatically sign all commits
+	gpgsign = true
+
+[tag]
+	# Automatically sign all tags
+	gpgsign = true
+
+[gpg]
+	# Use gpg2 if available
+	program = gpg2
+
+[core]
+	# Use vim as default editor
+	editor = vim
+	# Handle line endings properly
+	autocrlf = input
+	# Make Git handle unicode filenames properly
+	quotepath = false
+	# Improve performance on large repositories
+	preloadindex = true
+	fscache = true
+
+[init]
+	# Use 'main' as default branch name for new repositories
+	defaultBranch = main
+
+[pull]
+	# Use rebase instead of merge when pulling
+	rebase = true
+
+[push]
+	# Push current branch to upstream branch with same name
+	default = current
+	# Automatically setup remote tracking
+	autoSetupRemote = true
+
+[fetch]
+	# Automatically prune remote-tracking references
+	prune = true
+
+[merge]
+	# Use vim for merge conflicts
+	tool = vimdiff
+	# Include common ancestor in merge conflicts
+	conflictstyle = diff3
+
+[diff]
+	# Use better diff algorithm
+	algorithm = histogram
+	# Show word-level diffs for moved code
+	colorMoved = default
+
+[rebase]
+	# Automatically stash and unstash when rebasing
+	autoStash = true
+	# Use interactive rebase with instructional format
+	instructionFormat = (%an <%ae>) %s
+
+[log]
+	# Show dates in relative format by default
+	date = relative
+
+[status]
+	# Show individual files in untracked directories
+	showUntrackedFiles = all
+
+[branch]
+	# When creating a new branch, set up tracking automatically
+	autoSetupMerge = always
+	autoSetupRebase = always
+
+[color]
+	# Enable colored output
+	ui = auto
+	branch = auto
+	diff = auto
+	status = auto
+
+[color "branch"]
+	current = yellow reverse
+	local = yellow
+	remote = green
+
+[color "diff"]
+	meta = yellow bold
+	frag = magenta bold
+	old = red bold
+	new = green bold
+
+[color "status"]
+	added = green
+	changed = yellow
+	untracked = cyan
+
+# Useful aliases
+[alias]
+	# Short status
+	st = status -s
+	
+	# Better log formats
+	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+	ll = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --numstat
+	
+	# Quick commit
+	cm = commit -m
+	
+	# Amend last commit
+	amend = commit --amend --no-edit
+	
+	# Quick add and commit
+	ac = !git add -A && git commit -m
+	
+	# Undo last commit (keep changes)
+	undo = reset HEAD~1 --mixed
+	
+	# Show branches
+	br = branch -v
+	
+	# Quick checkout
+	co = checkout
+	
+	# Create new branch and switch to it
+	cob = checkout -b
+	
+	# Show diff of staged changes
+	staged = diff --staged
+	
+	# Show diff of unstaged changes
+	unstaged = diff
+	
+	# Stash with message
+	stash-save = stash push -m
+	
+	# Show stash list
+	stash-list = stash list --pretty=format:'%C(red)%h%C(reset) - %C(dim yellow)(%C(bold magenta)%gd%C(dim yellow))%C(reset) %<(70,trunc)%s %C(green)(%cr) %C(bold blue)<%an>%C(reset)'
+	
+	# Clean up merged branches
+	cleanup = "!git branch --merged | grep -v '\\*\\|main\\|master\\|develop' | xargs -n 1 git branch -d"
+	
+	# Show remote URL
+	url = remote get-url origin
+	
+	# Show commit signature verification
+	verify = log --show-signature -1
+
+[include]
+	# Include local git config if it exists
+	path = ~/.gitconfig.local 
