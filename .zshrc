@@ -36,6 +36,15 @@ plugins=(
 # Load Oh My Zsh
 source $ZSH/oh-my-zsh.sh
 
+# Configure zsh-autosuggestions to NOT interfere with tab completion
+# This ensures tab completion prioritizes filesystem over history
+export ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+export ZSH_AUTOSUGGEST_USE_ASYNC=true
+export ZSH_AUTOSUGGEST_MANUAL_REBIND=true
+
+# Configure history-substring-search to NOT interfere with tab completion
+export HISTORY_SUBSTRING_SEARCH_ENSURE_UNIQUE=1
+
 # ============================================================================
 # ENVIRONMENT VARIABLES
 # ============================================================================
@@ -276,28 +285,32 @@ genpass() {
 # ============================================================================
 
 # Vi mode for command line editing (matches vim theme)
-bindkey -v  # Re-enabled with proper tab completion below
+bindkey -v
 
-# Autosuggestions keybindings (fish-like behavior)
-bindkey '^I' autosuggest-accept        # Tab accepts the autosuggestion
+# Standard tab completion comes first (filesystem completion)
+bindkey '^I' expand-or-complete  # Tab for standard completion (files/dirs)
+
+# Autosuggestions keybindings (alternative keys, not Tab)
 bindkey '^[[C' autosuggest-accept      # Right arrow accepts the autosuggestion  
 bindkey '^F' autosuggest-accept        # Ctrl+F accepts the autosuggestion
 bindkey '^[[1;5C' autosuggest-partial-accept  # Ctrl+Right arrow accepts partial word
 
-# Fix tab completion in vi mode (fallback when no autosuggestion)
-bindkey -M viins '^[[Z' expand-or-complete  # Shift+Tab for traditional completion
-bindkey -M vicmd '^[[Z' expand-or-complete  # Shift+Tab in command mode
+# Enhanced tab completion in vi mode
+bindkey -M viins '^I' expand-or-complete     # Tab for completion in insert mode
+bindkey -M vicmd '^I' expand-or-complete     # Tab for completion in command mode
+bindkey -M viins '^[[Z' reverse-menu-complete # Shift+Tab for reverse completion
+bindkey -M vicmd '^[[Z' reverse-menu-complete # Shift+Tab in command mode
 
-# Better history search
+# Better history search (not mapped to Tab)
 bindkey "^[[A" history-substring-search-up
 bindkey "^[[B" history-substring-search-down
-bindkey -M vicmd "k" history-substring-search-up  # Re-enabled
+bindkey -M vicmd "k" history-substring-search-up
 bindkey -M vicmd "j" history-substring-search-down
 
 # Edit command line in vim
 autoload -U edit-command-line
 zle -N edit-command-line
-bindkey -M vicmd "^E" edit-command-line  # Re-enabled
+bindkey -M vicmd "^E" edit-command-line
 
 # Quick navigation
 bindkey "^A" beginning-of-line
@@ -323,8 +336,8 @@ bindkey "^L" clear-screen                         # Ctrl+L to clear screen
 autoload -Uz compinit
 compinit
 
-# Completion styling
-zstyle ':completion:*' menu select=2  # Only show menu with 2+ options
+# Enhanced completion styling for better filesystem navigation
+zstyle ':completion:*' menu select=2  # Show menu with 2+ options
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 zstyle ':completion:*:descriptions' format '[%d]'
@@ -333,9 +346,22 @@ zstyle ':completion:*:messages' format '%d'
 zstyle ':completion:*:warnings' format 'No matches for: %d'
 zstyle ':completion:*' group-name ''
 
-# Cache completions
-zstyle ':completion::complete:*' use-cache 1
-zstyle ':completion::complete:*' cache-path ~/.zsh/cache
+# Prioritize files and directories in completion
+zstyle ':completion:*' list-dirs-first true
+zstyle ':completion:*:cd:*' tag-order local-directories directory-stack path-directories
+zstyle ':completion:*:*:*:*:*' menu select
+zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#) ([0-9a-z-]#)*=01;34=0=01'
+
+# Faster completion for large directories
+zstyle ':completion:*' accept-exact '*(N)'
+zstyle ':completion:*' use-cache on
+zstyle ':completion:*' cache-path ~/.zsh/cache
+
+# Make completion case-insensitive and partial-word completion
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z-_}={A-Za-z_-}' 'r:|=*' 'l:|=* r:|=*'
+
+# Don't complete usernames for most commands (keeps completion focused on files)
+zstyle ':completion:*' users root $USER
 
 # ============================================================================
 # POWERLEVEL10K CONFIGURATION
