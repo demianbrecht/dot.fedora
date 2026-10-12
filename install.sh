@@ -342,6 +342,71 @@ setup_fzf() {
     fi
 }
 
+# Function to enable RPM Fusion and install H.264/H.265 codecs
+setup_codecs() {
+    print_header "Setting up multimedia codecs (H.265/HEVC)..."
+
+    local fedora_ver
+    fedora_ver=$(rpm -E %fedora)
+
+    # RPM Fusion free + nonfree (the main repos, not just the steam/nvidia sub-repos)
+    local flavor
+    for flavor in free nonfree; do
+        if ! rpm -q "rpmfusion-$flavor-release" &>/dev/null; then
+            print_status "Enabling RPM Fusion $flavor..."
+            sudo dnf install -y \
+                "https://mirrors.rpmfusion.org/$flavor/fedora/rpmfusion-$flavor-release-$fedora_ver.noarch.rpm" \
+                || print_warning "Could not enable RPM Fusion $flavor"
+        else
+            print_status "RPM Fusion $flavor is already enabled"
+        fi
+    done
+
+    # Swap the codec-stripped ffmpeg-free for the full build
+    if rpm -q ffmpeg-free &>/dev/null; then
+        print_status "Swapping ffmpeg-free for ffmpeg..."
+        sudo dnf swap -y ffmpeg-free ffmpeg --allowerasing \
+            || print_warning "Could not swap ffmpeg-free for ffmpeg"
+    else
+        install_package "ffmpeg" || true
+    fi
+
+    local codec_packages=(
+        "ffmpeg-libs"
+        "libavcodec-freeworld"
+        "gstreamer1-plugin-libav"
+        "gstreamer1-plugins-bad-freeworld"
+        "gstreamer1-plugins-ugly"
+        "libva-utils"
+    )
+    for package in "${codec_packages[@]}"; do
+        install_package "$package" || true
+    done
+
+    # Hardware (VA-API) decode, picked by GPU vendor
+    local gpu
+    gpu=$(lspci 2>/dev/null | grep -iE 'vga|3d|display')
+    if grep -qiE 'amd|ati|radeon' <<< "$gpu"; then
+        print_status "AMD GPU detected, installing Mesa freeworld VA-API drivers..."
+        if rpm -q mesa-va-drivers &>/dev/null; then
+            sudo dnf swap -y mesa-va-drivers mesa-va-drivers-freeworld --allowerasing \
+                || print_warning "Could not swap mesa-va-drivers"
+        else
+            install_package "mesa-va-drivers-freeworld" || true
+        fi
+    elif grep -qi 'intel' <<< "$gpu"; then
+        print_status "Intel GPU detected, installing media driver..."
+        install_package "intel-media-driver" || true
+    elif grep -qi 'nvidia' <<< "$gpu"; then
+        print_status "NVIDIA GPU detected, installing VA-API driver..."
+        install_package "nvidia-vaapi-driver" || true
+    else
+        print_warning "Could not detect GPU vendor; skipping hardware decode drivers"
+    fi
+
+    print_success "Codecs installed (verify with: ffmpeg -decoders | grep hevc; vainfo)"
+}
+
 # Function to install GNOME Extensions
 install_gnome_extensions() {
     print_header "Installing GNOME Extensions..."
@@ -350,9 +415,8 @@ install_gnome_extensions() {
     install_package "gnome-extensions-app" || true
     install_package "gnome-shell-extension-manager" || true
     
-    # Install mpv and ffmpeg (required by gnome-wallpaper-engine)
+    # Install mpv (required by gnome-wallpaper-engine; ffmpeg comes from setup_codecs)
     install_package "mpv" || true
-    install_package "ffmpeg" || true
     
     # Install gnome-wallpaper-engine extension for GNOME
     local ext_uuid="gnome-wallpaper-engine@gjs.com"
@@ -372,6 +436,31 @@ install_gnome_extensions() {
         fi
     else
         print_status "gnome-wallpaper-engine extension is already installed"
+    fi
+
+    # Keep the wallpaper running under maximized/fullscreen windows. With the default
+    # the extension kills mpv whenever a window fills the monitor, so a transparent
+    # terminal shows only the static thumbnail.
+    if [[ -d "$ext_dir/schemas" ]]; then
+        gsettings --schemadir "$ext_dir/schemas" \
+            set org.gnome.shell.extensions.gnome-wallpaper-engine pause-on-fullscreen false \
+            || print_warning "Could not disable pause-on-fullscreen for gnome-wallpaper-engine"
+    fi
+
+    # Pass --fullscreen to mpv so the wallpaper doesn't jitter between workspaces.
+    # This patches the extension in place, so extension updates drop it; re-run
+    # install.sh (idempotent) to re-apply.
+    local wp_js="$ext_dir/modules/wallpaper.js"
+    if [[ -f "$wp_js" ]]; then
+        if grep -q '"--fullscreen"' "$wp_js"; then
+            print_status "gnome-wallpaper-engine already patched with --fullscreen"
+        elif sed -i 's/^\( *\)"--keep-open=yes",$/&\n\1"--fullscreen",/' "$wp_js" \
+                && grep -q '"--fullscreen"' "$wp_js"; then
+            print_success "Patched gnome-wallpaper-engine to launch mpv with --fullscreen"
+            print_status "Log out and back in (or disable/enable the extension) to apply"
+        else
+            print_warning "Could not patch gnome-wallpaper-engine (wallpaper.js layout changed?)"
+        fi
     fi
 }
 
@@ -428,6 +517,9 @@ main() {
     # Setup FZF
     setup_fzf
     
+    # Install multimedia codecs (before anything that needs ffmpeg)
+    setup_codecs
+
     # Install GNOME extensions
     install_gnome_extensions
     
@@ -444,6 +536,7 @@ main() {
     echo "  • Programming fonts (FiraCode Nerd Font, Fira Code, JetBrains Mono, Cascadia Code)"
     echo "  • Bash configuration with vim mode enabled"
     echo "  • FZF fuzzy finder with bash integration"
+    echo "  • RPM Fusion, full ffmpeg and H.265/HEVC codecs with VA-API hardware decode"
     echo "  • GNOME wallpaper engine extension for live wallpapers"
     echo
     print_header "Next steps:"

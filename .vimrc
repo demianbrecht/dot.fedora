@@ -23,9 +23,6 @@ syntax on
 " Add line numbers
 set number
 
-" Set relative line numbers
-set relativenumber
-
 " Highlight cursor line underneath the cursor horizontally
 set cursorline
 
