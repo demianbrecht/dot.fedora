@@ -77,7 +77,6 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias ~='cd ~'
-alias -- -='cd -'
 
 # Git aliases (complement the .gitconfig)
 alias g='git'
@@ -204,5 +203,3 @@ bind -m vi-command 'Control-e: end-of-line'
 #     fi
 # }
 # PROMPT_COMMAND=__prompt_command
-
-# Load local bash customizations if they exist 

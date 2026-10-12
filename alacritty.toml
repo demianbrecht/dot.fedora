@@ -65,7 +65,7 @@ italic = { family = "FiraCode Nerd Font", style = "Italic" }
 bold_italic = { family = "FiraCode Nerd Font", style = "Bold Italic" }
 
 # Font size - slightly larger for better readability
-size = 9.0
+size = 11.0
 
 # Offset for better spacing
 offset = { x = 0, y = 2 }

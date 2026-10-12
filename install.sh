@@ -166,60 +166,60 @@ setup_font_rendering() {
     # Create fontconfig directory if it doesn't exist
     mkdir -p "$HOME/.config/fontconfig"
     
-    # Create improved fontconfig for better rendering
+    # Create fontconfig for consistent rendering. GNOME on Wayland uses
+    # grayscale antialiasing with slight hinting, so don't force RGB subpixel
+    # rendering here (it produces colour fringing and blurry text).
     cat > "$HOME/.config/fontconfig/fonts.conf" << 'EOF'
 <?xml version="1.0"?>
 <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
 <fontconfig>
-    <!-- Enable anti-aliasing -->
     <match target="font">
-        <edit name="antialias" mode="assign">
-            <bool>true</bool>
-        </edit>
+        <edit name="antialias" mode="assign"><bool>true</bool></edit>
+        <edit name="hinting" mode="assign"><bool>true</bool></edit>
+        <edit name="hintstyle" mode="assign"><const>hintslight</const></edit>
+        <edit name="rgba" mode="assign"><const>none</const></edit>
     </match>
-    
-    <!-- Enable hinting -->
-    <match target="font">
-        <edit name="hinting" mode="assign">
-            <bool>true</bool>
-        </edit>
-    </match>
-    
-    <!-- Hinting style -->
-    <match target="font">
-        <edit name="hintstyle" mode="assign">
-            <const>hintslight</const>
-        </edit>
-    </match>
-    
-    <!-- Sub-pixel rendering -->
-    <match target="font">
-        <edit name="rgba" mode="assign">
-            <const>rgb</const>
-        </edit>
-    </match>
-    
-    <!-- LCD filter -->
-    <match target="font">
-        <edit name="lcdfilter" mode="assign">
-            <const>lcddefault</const>
-        </edit>
-    </match>
-    
-    <!-- Prefer specific fonts for better rendering -->
+
+    <!-- Prefer the Nerd Font so icons/powerline glyphs resolve in monospace -->
     <alias>
         <family>monospace</family>
         <prefer>
+            <family>FiraCode Nerd Font Mono</family>
             <family>Fira Code</family>
             <family>JetBrains Mono</family>
-            <family>Cascadia Code</family>
             <family>Liberation Mono</family>
         </prefer>
     </alias>
 </fontconfig>
 EOF
-    
+
     print_success "Font rendering configured for better display"
+}
+
+# Function to install a Nerd Font release into ~/.local/share/fonts
+install_nerd_font() {
+    local archive="$1"   # release asset name, e.g. FiraCode
+    local family="$2"    # fontconfig family, e.g. "FiraCode Nerd Font"
+    local dest="$HOME/.local/share/fonts/${archive}NerdFont"
+
+    if fc-list : family | grep -qix "$family"; then
+        print_status "$family is already installed"
+        return 0
+    fi
+
+    print_status "Installing $family..."
+    local tmp
+    tmp=$(mktemp -d)
+    if curl -fsSL -o "$tmp/$archive.tar.xz" \
+        "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/$archive.tar.xz"; then
+        mkdir -p "$dest"
+        tar -xJf "$tmp/$archive.tar.xz" -C "$dest" \
+            --wildcards "${archive}NerdFont-*.ttf" "${archive}NerdFontMono-*.ttf"
+        print_success "Installed $family"
+    else
+        print_warning "Could not download $family"
+    fi
+    rm -rf "$tmp"
 }
 
 # Function to install multiple font options
@@ -248,6 +248,9 @@ install_fonts() {
         fi
     done
     
+    # Install FiraCode Nerd Font (not packaged in Fedora; alacritty.toml uses it)
+    install_nerd_font "FiraCode" "FiraCode Nerd Font"
+
     # Update font cache
     print_status "Updating font cache..."
     fc-cache -fv &>/dev/null || true
@@ -347,25 +350,28 @@ install_gnome_extensions() {
     install_package "gnome-extensions-app" || true
     install_package "gnome-shell-extension-manager" || true
     
-    # Install hanabi extension for GNOME
-    local hanabi_dir="$HOME/.local/share/gnome-shell/extensions/hanabi@jeffshee.github.io"
-    if [[ ! -d "$hanabi_dir" ]]; then
-        print_status "Installing hanabi GNOME extension..."
+    # Install mpv and ffmpeg (required by gnome-wallpaper-engine)
+    install_package "mpv" || true
+    install_package "ffmpeg" || true
+    
+    # Install gnome-wallpaper-engine extension for GNOME
+    local ext_uuid="gnome-wallpaper-engine@gjs.com"
+    local ext_dir="$HOME/.local/share/gnome-shell/extensions/$ext_uuid"
+    if [[ ! -d "$ext_dir" ]]; then
+        print_status "Installing gnome-wallpaper-engine GNOME extension..."
         mkdir -p "$HOME/.local/share/gnome-shell/extensions"
         
-        # Download and install hanabi extension
-        local temp_dir=$(mktemp -d)
-        if git clone https://github.com/jeffshee/gnome-ext-hanabi.git "$temp_dir"; then
-            cp -r "$temp_dir/hanabi@jeffshee.github.io" "$HOME/.local/share/gnome-shell/extensions/"
-            print_success "Hanabi extension installed"
-            print_status "Enable it with: gnome-extensions enable hanabi@jeffshee.github.io"
-            rm -rf "$temp_dir"
+        if git clone --depth 1 https://github.com/achu94/gnome-wallpaper-engine.git "$ext_dir"; then
+            rm -rf "$ext_dir/.git"
+            glib-compile-schemas "$ext_dir/schemas" 2>/dev/null || true
+            print_success "gnome-wallpaper-engine extension installed"
+            print_status "Log out and back in, then enable it with: gnome-extensions enable $ext_uuid"
         else
-            print_warning "Could not install hanabi extension"
-            rm -rf "$temp_dir"
+            print_warning "Could not install gnome-wallpaper-engine extension"
+            rm -rf "$ext_dir"
         fi
     else
-        print_status "Hanabi extension is already installed"
+        print_status "gnome-wallpaper-engine extension is already installed"
     fi
 }
 
@@ -435,15 +441,15 @@ main() {
     echo "  • Alacritty configuration with 80% transparency and vim mode (bash default)"
     echo "  • Git configuration with GPG commit signing"
     echo "  • Font rendering optimizations (fontconfig, freetype, cairo, pango)"
-    echo "  • Multiple programming fonts (Fira Code, JetBrains Mono, Cascadia Code)"
+    echo "  • Programming fonts (FiraCode Nerd Font, Fira Code, JetBrains Mono, Cascadia Code)"
     echo "  • Bash configuration with vim mode enabled"
     echo "  • FZF fuzzy finder with bash integration"
-    echo "  • GNOME hanabi extension for dynamic wallpapers"
+    echo "  • GNOME wallpaper engine extension for live wallpapers"
     echo
     print_header "Next steps:"
     echo
     print_status "1. Restart your terminal to use the new bash configuration"
-    print_status "2. Enable GNOME extensions: gnome-extensions enable hanabi@jeffshee.github.io"
+    print_status "2. Enable GNOME extensions: gnome-extensions enable gnome-wallpaper-engine@gjs.com"
     print_status "3. If you have font rendering issues, run: ./fix-fonts.sh"
     echo
     print_header "Bash Features & Key Bindings:"

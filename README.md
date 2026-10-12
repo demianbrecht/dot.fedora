@@ -16,7 +16,7 @@ A comprehensive collection of dotfiles specifically designed for Fedora Workstat
 - **🔐 GPG Commit Signing**: Automatic commit signing with your GPG key
 - **🎯 Font Optimization**: Multiple font options with rendering improvements
 - **🔍 Fuzzy Finding**: FZF integration for file and history search
-- **🌈 GNOME Integration**: Hanabi extension for dynamic wallpapers
+- **🌈 GNOME Integration**: GNOME wallpaper engine extension for live wallpapers
 - **📦 Plugin Management**: Pathogen for vim plugin management
 
 ## 🚀 Quick Start
@@ -120,7 +120,7 @@ The install script automatically:
 5. **Creates symlinks** for all configuration files
 6. **Configures bash** with vim mode and productivity features
 7. **Installs FZF** for fuzzy finding
-8. **Sets up GNOME extensions** including hanabi for dynamic wallpapers
+8. **Sets up GNOME extensions** including gnome-wallpaper-engine for live wallpapers
 
 ## 🔧 Customization
 
@@ -207,10 +207,10 @@ If vim mode isn't working in bash:
 3. Verify the symlink: `ls -la ~/.bashrc.d/vim_mode`
 
 ### GNOME Extensions
-To enable the hanabi extension:
+To enable the gnome-wallpaper-engine extension:
 
 1. Install GNOME Extensions app: `sudo dnf install gnome-extensions-app`
-2. Enable hanabi: `gnome-extensions enable hanabi@jeffshee.github.io`
+2. Enable it: `gnome-extensions enable gnome-wallpaper-engine@gjs.com` (log out and back in first if it is not listed)
 3. Configure via Extensions app preferences
 
 ## 📝 Notes
